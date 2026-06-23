@@ -1,68 +1,62 @@
-﻿// PlayerConfigValues.cs
-using System;
-using System.Linq;
+﻿using System;
 using System.Collections.Generic;
-using BepInEx.Configuration;
-using UnityEngine;
-using ComplexBreeding;
+using System.Globalization;
 using MBMScripts;
 
-namespace DumberCBPatches.Configuration
+namespace DumberCBRPatches.Configuration
 {
-    /// <summary>
-    ///Configure the parameters that players use when initializing the Trap.
-    ///This static instance should be read in Initialize TraitPatch. Postfix.
-    /// </summary>
     public class PlayerConfigValues
     {
-        public ConfigEntry<float> SexTime { get; private set; }
-        public ConfigEntry<float> ConceptionRate { get; private set; }
-        public ConfigEntry<string> Traits { get; private set; }
+        // Live-bind directly to your UI wrapper definitions to completely prevent data ghosting!
+        public float SexTime => ModSettingsDataRegister.SexTimeData.Value;
 
-        public PlayerConfigValues(ConfigFile cfg)
+        public float ConceptionRate => ModSettingsDataRegister.ConceptionRateData.Value switch
         {
-            var section = "Player";
+            0 => 0f,
+            1 => 0.25f,
+            2 => 0.5f,
+            3 => 0.75f,
+            _ => 1f
+        };
 
-            SexTime = cfg.Bind(
-                section,
-                nameof(SexTime),
-                120f,
-                new ConfigDescription("SexTime")
-            );
+        // FIX: Forces the cache engine to pull live text changes directly from the active UI wrapper
+        public string Traits => ModSettingsDataRegister.PlayerTraitsData.Value ?? string.Empty;
 
-            ConceptionRate = cfg.Bind(
-                section,
-                nameof(ConceptionRate),
-                0.75f,
-                new ConfigDescription("ConceptionRate [0-1]")
-            );
-
-            var defaultCsv = string.Join(",",
-                new[] { 93, 94, 95, 96, 97, 98 }
-                    .Select(i => $"Trait{i}:2"));
-            Traits = cfg.Bind(
-                section,
-                nameof(Traits),
-                defaultCsv,
-                new ConfigDescription("Player Trait:Value list,separated by commas")
-            );
-        }
-
-        /// <summary>
-        /// Parse from CSV to (ETrait, float) pairs
-        /// </summary>
         public IEnumerable<(ETrait trait, float value)> ParseTraits()
         {
-            return Traits.Value
-                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(pair => pair.Split(':'))
-                .Where(parts => parts.Length == 2 &&
-                                Enum.TryParse<ETrait>(parts[0], out _) &&
-                                float.TryParse(parts[1], out _))
-                .Select(parts => (
-                    (ETrait)Enum.Parse(typeof(ETrait), parts[0]),
-                    float.Parse(parts[1])
-                ));
+            var raw = Traits;
+
+            if (string.IsNullOrWhiteSpace(raw))
+                yield break;
+
+            // Map UI string keys to actual game ETrait values
+            var traitMap = new Dictionary<string, ETrait>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Demonic", ETrait.Trait93 },
+                { "Sacred", ETrait.Trait94 },
+                { "Elemental", ETrait.Trait95 },
+                { "Eternal", ETrait.Trait96 },
+                { "Magical", ETrait.Trait97 },
+                { "Feral", ETrait.Trait98 }
+            };
+
+            foreach (var p in raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = p.Split(new[] { '=', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 2)
+                    continue;
+
+                string traitKey = parts[0].Trim();
+                string valStr = parts[1].Trim();
+
+                if (!traitMap.TryGetValue(traitKey, out var trait))
+                    continue;
+
+                if (!float.TryParse(valStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float val))
+                    continue;
+
+                yield return (trait, val);
+            }
         }
     }
 }

@@ -1,64 +1,56 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-	<LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net481</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="CoreAwakePatches\**" />
-    <Compile Remove="Professions\**" />
-    <Compile Remove="Species\**" />
-    <EmbeddedResource Remove="CoreAwakePatches\**" />
-    <EmbeddedResource Remove="Professions\**" />
-    <EmbeddedResource Remove="Species\**" />
-    <None Remove="CoreAwakePatches\**" />
-    <None Remove="Professions\**" />
-    <None Remove="Species\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Characters\**" />
+		<Compile Remove="CoreAwakePatches\**" />
+		<Compile Remove="Professions\**" />
+		<Compile Remove="Species\**" />
+		<EmbeddedResource Remove="Characters\**" />
+		<EmbeddedResource Remove="CoreAwakePatches\**" />
+		<EmbeddedResource Remove="Professions\**" />
+		<EmbeddedResource Remove="Species\**" />
+		<None Remove="Characters\**" />
+		<None Remove="CoreAwakePatches\**" />
+		<None Remove="Professions\**" />
+		<None Remove="Species\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="PixyTest.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Configuration\FinalPricePatch.cs" />
+		<Compile Remove="Configuration\ProfessionRarityConfigValues.cs" />
+		<Compile Remove="Configuration\ProfessionRarityPatch.cs" />
+		<Compile Remove="Patches\SetEssenceValuePatch.cs" />
+		<Compile Remove="PluginInfo.cs" />
+	</ItemGroup>
 
 
-  <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\core\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\MonsterBlackMarket_Data\Managed\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\core\BepInEx.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx.Preloader.Core">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\core\BepInEx.Preloader.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx.Unity.Mono">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\core\BepInEx.Unity.Mono.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInExConfigManager.Mono">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\plugins\BepInExConfigManager.Mono.dll</HintPath>
-    </Reference>
-    <Reference Include="ComplexBreeding">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\plugins\ComplexBreeding.dll</HintPath>
-    </Reference>
-    <Reference Include="MBMModsServices">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\BepInEx\plugins\MBMModsServices.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\MonsterBlackMarket_Data\Managed\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>G:\DOWNLOADS\games\Monster Black Market V2.0.16.0 w DLC w Uncen\MonsterBlackMarket_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CharactersPatch\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="0Harmony">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\MBM.ModLoader\0Harmony.dll</HintPath>
+		</Reference>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\MonsterBlackMarket_Data\Managed\Assembly-CSharp.dll</HintPath>
+		</Reference>
+		<Reference Include="MBM.ModLoader">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\MBM.ModLoader\MBM.ModLoader.dll</HintPath>
+		</Reference>
+		<Reference Include="ComplexBreedingRedux">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\Mods\ComplexBreedingRedux.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\MonsterBlackMarket_Data\Managed\UnityEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>D:\F95\xMonster_Black_Market_2.1.2.0DLC\MonsterBlackMarket_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
 </Project>
