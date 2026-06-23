@@ -8,25 +8,31 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="Characters\**" />
+		<Compile Remove="CharactersPatch\**" />
 		<Compile Remove="CoreAwakePatches\**" />
+		<Compile Remove="Item\**" />
+		<Compile Remove="Player\**" />
 		<Compile Remove="Professions\**" />
 		<Compile Remove="Species\**" />
-		<EmbeddedResource Remove="Characters\**" />
+		<EmbeddedResource Remove="CharactersPatch\**" />
 		<EmbeddedResource Remove="CoreAwakePatches\**" />
+		<EmbeddedResource Remove="Item\**" />
+		<EmbeddedResource Remove="Player\**" />
 		<EmbeddedResource Remove="Professions\**" />
 		<EmbeddedResource Remove="Species\**" />
-		<None Remove="Characters\**" />
+		<None Remove="CharactersPatch\**" />
 		<None Remove="CoreAwakePatches\**" />
+		<None Remove="Item\**" />
+		<None Remove="Player\**" />
 		<None Remove="Professions\**" />
 		<None Remove="Species\**" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Remove="CBPatches.cs" />
 		<Compile Remove="Configuration\FinalPricePatch.cs" />
 		<Compile Remove="Configuration\ProfessionRarityConfigValues.cs" />
 		<Compile Remove="Configuration\ProfessionRarityPatch.cs" />
-		<Compile Remove="Patches\SetEssenceValuePatch.cs" />
 		<Compile Remove="PluginInfo.cs" />
 	</ItemGroup>
 

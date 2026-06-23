@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DumberCBPatches", "DumberCBPatches.csproj", "{B82E813D-82A1-4AA2-998D-2DFE425B5F59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DumberCBRPatches", "DumberCBRPatches.csproj", "{B82E813D-82A1-4AA2-998D-2DFE425B5F59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
