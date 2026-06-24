@@ -2,7 +2,7 @@
 
 Special thanks to Memacile & GJQCSJ.
 
-Patches for use with **Complex Breeding Redux** and **MBM Loader**.
+Patches to use with **Complex Breeding Redux** and **MBM Loader**.
 
 ## Features
 
