@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿//PlayerConfigValues.cs
+
 using System.Globalization;
 using MBMScripts;
 
@@ -7,7 +7,6 @@ namespace DumberCBRPatches.Configuration
 {
     public class PlayerConfigValues
     {
-        // Live-bind directly to your UI wrapper definitions to completely prevent data ghosting!
         public float SexTime => ModSettingsDataRegister.SexTimeData.Value;
 
         public float ConceptionRate => ModSettingsDataRegister.ConceptionRateData.Value switch
@@ -19,7 +18,6 @@ namespace DumberCBRPatches.Configuration
             _ => 1f
         };
 
-        // FIX: Forces the cache engine to pull live text changes directly from the active UI wrapper
         public string Traits => ModSettingsDataRegister.PlayerTraitsData.Value ?? string.Empty;
 
         public IEnumerable<(ETrait trait, float value)> ParseTraits()
@@ -29,7 +27,6 @@ namespace DumberCBRPatches.Configuration
             if (string.IsNullOrWhiteSpace(raw))
                 yield break;
 
-            // Map UI string keys to actual game ETrait values
             var traitMap = new Dictionary<string, ETrait>(StringComparer.OrdinalIgnoreCase)
             {
                 { "Demonic", ETrait.Trait93 },
@@ -40,9 +37,9 @@ namespace DumberCBRPatches.Configuration
                 { "Feral", ETrait.Trait98 }
             };
 
-            foreach (var p in raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in raw.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries))
             {
-                var parts = p.Split(new[] { '=', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                var parts = p.Split(['=', ':'], StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length != 2)
                     continue;
 

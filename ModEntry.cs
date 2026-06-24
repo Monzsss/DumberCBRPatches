@@ -1,9 +1,11 @@
-﻿using System;
+﻿//ModEntry.cs
+
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using MBM.ModLoader.Settings;
 using DumberCBRPatches.Configuration;
+using DumberCBRPatches.Characters;
 
 namespace DumberCBRPatches
 {
@@ -18,8 +20,6 @@ namespace DumberCBRPatches
         public static ProfessionConfigValues? ProfessionConfig { get; private set; }
         public static SpeciesConfigValues? SpeciesConfig { get; private set; }
         public static PlayerConfigValues? PlayerConfig { get; private set; }
-
-        // Explicit global public definition
         public static EssenceConfigValues? EssenceConfig { get; private set; }
 
         private static bool _initialized;
@@ -45,15 +45,13 @@ namespace DumberCBRPatches
                 ModSettingsDataRegister.Initialize();
 
                 ReloadAllConfig();
-
                 RegisterCustomModUi();
                 RegisterSettingsListeners();
 
                 var harmony = new Harmony(ModId);
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
 
-                DumberCBRPatches.Patches.AttributeUpgradesPatch.ApplyManualPatch(harmony);
-                //DumberCBRPatches.Patches.SetEssenceValuePatch.ApplyManualPatch(harmony);
+                Patches.AttributeUpgradesPatch.ApplyManualPatch(harmony);
 
                 Log("Mod loaded successfully.");
             }
@@ -63,14 +61,15 @@ namespace DumberCBRPatches
             }
         }
 
-        private static void ReloadAllConfig()
+        public static void ReloadAllConfig()
         {
             CharacterConfig = new CharacterConfigValues();
             ProfessionConfig = new ProfessionConfigValues();
             SpeciesConfig = new SpeciesConfigValues();
             PlayerConfig = new PlayerConfigValues();
 
-            // FIX: Explicitly assign through the master ModEntry class scope pointer to resolve CS0103!
+            DynamicCharacterTraitsPatch.Config = CharacterConfig;
+
             var essenceCfg = new EssenceConfigValues();
             essenceCfg.PopulationRegistryCacheFromRedux();
             ModEntry.EssenceConfig = essenceCfg;
@@ -139,16 +138,17 @@ namespace DumberCBRPatches
                     }
                 });
 
-                // Automated trackers for custom characters
                 foreach (var name in ModSettingsDataRegister.TargetCharacters)
                 {
-                    ModSettings.OnChanged(ModName, $"{name}_Traits", _ =>
+                    string cleanDisplayName = ToDisplayNameHelper(name);
+
+                    ModSettings.OnChanged(ModName, $"{cleanDisplayName} Essence", _ =>
                     {
                         if (_resetInProgress) return;
                         ReloadAllConfig();
                     });
 
-                    ModSettings.OnChanged(ModName, $"{name}_TitsType", _ =>
+                    ModSettings.OnChanged(ModName, $"{cleanDisplayName} Breast Size", _ =>
                     {
                         if (_resetInProgress) return;
                         ReloadAllConfig();
@@ -157,10 +157,10 @@ namespace DumberCBRPatches
 
                 string[] watchedKeys =
                 {
-                    "Player_SexTime",
-                    "Player_ConceptionRate",
-                    "Player_Traits",
-                    "Essence_FilterMode"
+                    "Player Sex Duration",
+                    "Player Conception Rate",
+                    "Player Traits",
+                    "Essence Filter Mode"
                 };
 
                 foreach (var key in watchedKeys)
@@ -180,6 +180,16 @@ namespace DumberCBRPatches
             {
                 LogError($"Listener init failed: {ex}");
             }
+        }
+
+        private static string ToDisplayNameHelper(string id)
+        {
+            for (int i = id.Length - 1; i >= 0; i--)
+            {
+                if (!char.IsDigit(id[i]))
+                    return id.Substring(0, i + 1);
+            }
+            return id;
         }
     }
 }

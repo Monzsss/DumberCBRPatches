@@ -1,120 +1,224 @@
-﻿using System;
-using System.Collections.Generic;
+﻿//EssenceConfigValues.cs
+
 using System.Reflection;
+using System.Linq.Expressions;
 using MBMScripts;
 
 namespace DumberCBRPatches.Configuration
 {
     public struct LocalUpgradeAttributeInfo
     {
-        public int Attribute { get; set; }
-        public float UpgradeValue { get; set; }
-        public float UpgradePointsPerValue { get; set; }
+        public int Attribute;
+        public float UpgradeValue;
+        public float UpgradePointsPerValue;
     }
 
     public class EssenceConfigValues
     {
-        public Dictionary<ETrait, List<LocalUpgradeAttributeInfo>> EssenceDataAttributes { get; internal set; } = new();
+        public Dictionary<ETrait, List<LocalUpgradeAttributeInfo>> EssenceDataAttributes { get; internal set; } = [];
+        private readonly List<List<LocalUpgradeAttributeInfo>> _listPool = [];
+        private int _poolIndex;
 
-        /// <summary>
-        /// Reads the internal Redux EssenceRegistry using reflection, contextually processes 
-        /// negative mechanics into buffs if selected, and populates our local clean storage.
-        /// </summary>
+        private List<LocalUpgradeAttributeInfo> GetPooledList()
+        {
+            if (_poolIndex < _listPool.Count)
+            {
+                var list = _listPool[_poolIndex++];
+                list.Clear();
+                return list;
+            }
+            var newList = new List<LocalUpgradeAttributeInfo>();
+            _listPool.Add(newList);
+            _poolIndex++;
+            return newList;
+        }
+
+        private static class ReduxReflectionCache
+        {
+            public static readonly Func<System.Collections.IEnumerable>? GetRegistryAll;
+            public static readonly Func<object, object>? GetTrait;
+            public static readonly Func<object, System.Collections.IEnumerable>? GetUpgrades;
+            public static readonly Func<object, object>? GetUpgradeAttribute;
+            public static readonly Func<object, float>? GetUpgradeValue;
+            public static readonly Func<object, float>? GetUpgradePoints;
+            public static readonly Action<object, float>? SetUpgradeValue;
+
+            static ReduxReflectionCache()
+            {
+                try
+                {
+                    Type? registryType = Type.GetType("ComplexBreedingRedux.Data.Essences.EssenceRegistry, ComplexBreedingRedux");
+                    Type? essenceType = Type.GetType("ComplexBreedingRedux.Data.Essences.EssenceData, ComplexBreedingRedux");
+                    Type? upgradeType = Type.GetType("ComplexBreedingRedux.Data.Essences.UpgradeAttributeInfo, ComplexBreedingRedux");
+
+                    if (registryType == null || essenceType == null || upgradeType == null) return;
+
+                    PropertyInfo? allProp = registryType.GetProperty("All", BindingFlags.Public | BindingFlags.Static);
+                    if (allProp != null)
+                    {
+                        var body = Expression.Convert(Expression.Property(null, allProp), typeof(System.Collections.IEnumerable));
+                        GetRegistryAll = Expression.Lambda<Func<System.Collections.IEnumerable>>(body).Compile();
+                    }
+
+                    PropertyInfo? traitProp = essenceType.GetProperty("ReplacedTrait") ?? essenceType.GetProperty("Trait");
+                    PropertyInfo? upgradesProp = essenceType.GetProperty("AttributeUpgrades");
+
+                    if (traitProp != null) GetTrait = CompileGetter<object>(essenceType, traitProp);
+                    if (upgradesProp != null) GetUpgrades = CompileGetter<System.Collections.IEnumerable>(essenceType, upgradesProp);
+
+                    PropertyInfo? attrProp = upgradeType.GetProperty("Attribute");
+                    PropertyInfo? valProp = upgradeType.GetProperty("UpgradeValue");
+                    PropertyInfo? ptsProp = upgradeType.GetProperty("UpgradePointsPerValue");
+
+                    if (attrProp != null) GetUpgradeAttribute = CompileGetter<object>(upgradeType, attrProp);
+                    if (valProp != null) GetUpgradeValue = CompileGetter<float>(upgradeType, valProp);
+                    if (ptsProp != null) GetUpgradePoints = CompileGetter<float>(upgradeType, ptsProp);
+
+                    if (valProp != null && valProp.CanWrite)
+                    {
+                        var instanceParam = Expression.Parameter(typeof(object));
+                        var valueParam = Expression.Parameter(typeof(float));
+                        var castInstance = Expression.Convert(instanceParam, upgradeType);
+                        var assign = Expression.Assign(Expression.Property(castInstance, valProp), valueParam);
+                        SetUpgradeValue = Expression.Lambda<Action<object, float>>(assign, instanceParam, valueParam).Compile();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.LogError($"Failed to build highly-optimized delegate cache expressions: {ex}");
+                }
+            }
+
+            private static Func<object, T> CompileGetter<T>(Type targetType, PropertyInfo prop)
+            {
+                var instanceParam = Expression.Parameter(typeof(object));
+                var castInstance = Expression.Convert(instanceParam, targetType);
+                var propAccess = Expression.Property(castInstance, prop);
+                var castResult = Expression.Convert(propAccess, typeof(T));
+                return Expression.Lambda<Func<object, T>>(castResult, instanceParam).Compile();
+            }
+        }
+
+        public static bool TryGetTraitFromInstance(object essenceInstance, out ETrait trait)
+        {
+            trait = default;
+            if (ReduxReflectionCache.GetTrait == null) return false;
+
+            var traitObj = ReduxReflectionCache.GetTrait(essenceInstance);
+            if (traitObj is ETrait resolvedTrait)
+            {
+                trait = resolvedTrait;
+                return true;
+            }
+            return false;
+        }
+
         public void PopulationRegistryCacheFromRedux()
         {
             EssenceDataAttributes.Clear();
+            DumberCBRPatches.Patches.AttributeUpgradesPatch.ClearCache();
+            _poolIndex = 0;
+
+            if (ReduxReflectionCache.GetRegistryAll == null || ReduxReflectionCache.GetTrait == null ||
+                ReduxReflectionCache.GetUpgrades == null || ReduxReflectionCache.GetUpgradeAttribute == null ||
+                ReduxReflectionCache.GetUpgradeValue == null || ReduxReflectionCache.GetUpgradePoints == null)
+            {
+                return;
+            }
 
             try
             {
-                Type? registryType = Type.GetType("ComplexBreedingRedux.Data.Essences.EssenceRegistry, ComplexBreedingRedux");
-                if (registryType == null) return;
-
-                PropertyInfo? allProp = registryType.GetProperty("All", BindingFlags.Public | BindingFlags.Static);
-                var allCollection = allProp?.GetValue(null) as System.Collections.IEnumerable;
+                var allCollection = ReduxReflectionCache.GetRegistryAll();
                 if (allCollection == null) return;
 
                 int filterMode = ModSettingsDataRegister.EssenceFilterModeData.Value;
+
+                Type? itemType = null;
 
                 foreach (object essence in allCollection)
                 {
                     if (essence == null) continue;
 
-                    Type essenceType = essence.GetType();
-                    PropertyInfo? traitProp = essenceType.GetProperty("ReplacedTrait") ?? essenceType.GetProperty("Trait");
-                    PropertyInfo? upgradesProp = essenceType.GetProperty("AttributeUpgrades");
-
-                    if (traitProp == null || upgradesProp == null) continue;
-
-                    var traitValue = traitProp.GetValue(essence);
-                    if (traitValue is ETrait eTrait)
+                    if (TryGetTraitFromInstance(essence, out ETrait eTrait))
                     {
-                        var sourceUpgrades = upgradesProp.GetValue(essence) as System.Collections.IEnumerable;
+                        var sourceUpgrades = ReduxReflectionCache.GetUpgrades(essence);
                         if (sourceUpgrades == null) continue;
 
-                        var processedList = new List<LocalUpgradeAttributeInfo>();
+                        var processedList = GetPooledList();
+
+                        if (itemType == null)
+                        {
+                            Type listType = sourceUpgrades.GetType();
+                            if (listType.IsGenericType) itemType = listType.GetGenericArguments()[0];
+                        }
+
+                        System.Collections.IList? harmonyResultList = null;
+                        if (itemType != null && filterMode != 0)
+                        {
+                            Type genericListType = typeof(List<>).MakeGenericType(itemType);
+                            harmonyResultList = Activator.CreateInstance(genericListType) as System.Collections.IList;
+                        }
+
+                        PropertyInfo? attrProp = itemType?.GetProperty("Attribute");
+                        PropertyInfo? valueProp = itemType?.GetProperty("UpgradeValue");
+                        PropertyInfo? pointsProp = itemType?.GetProperty("UpgradePointsPerValue");
 
                         foreach (object upgrade in sourceUpgrades)
                         {
                             if (upgrade == null) continue;
 
-                            Type upType = upgrade.GetType();
+                            var attrObj = ReduxReflectionCache.GetUpgradeAttribute(upgrade);
+                            if (attrObj == null) continue;
 
-                            // Safely extract names and base numeric metrics
-                            var attrObj = upType.GetProperty("Attribute")?.GetValue(upgrade);
-                            string attrName = attrObj?.ToString() ?? string.Empty;
-                            int attributeEnumInt = (int)(attrObj ?? 0);
+                            string attrName = attrObj.ToString() ?? string.Empty;
+                            int attributeEnumInt = (int)attrObj;
 
-                            float upValue = (float)(upType.GetProperty("UpgradeValue")?.GetValue(upgrade) ?? 0f);
-                            float pointsPerVal = (float)(upType.GetProperty("UpgradePointsPerValue")?.GetValue(upgrade) ?? 0f);
+                            float upValue = ReduxReflectionCache.GetUpgradeValue(upgrade);
+                            float pointsPerVal = ReduxReflectionCache.GetUpgradePoints(upgrade);
 
-                            // 1. CONTEXTUAL ASSESSMENT: Check whether the entry hurts the character
-                            bool isNegativeEffect = false;
-
-                            if (attrName == "MaintenanceCost")
+                            bool isNegativeEffect = attrName switch
                             {
-                                isNegativeEffect = upValue > 0f; // Paying more gold is a penalty
-                            }
-                            else if (attrName == "GrowthTime" || attrName == "DamageDuringSex" || attrName == "SexTime")
-                            {
-                                isNegativeEffect = upValue > 0f; // Higher values slow down or hurt characters
-                            }
-                            else
-                            {
-                                isNegativeEffect = upValue < 0f; // Standard negative numbers are debuffs
-                            }
+                                "MaintenanceCost" => upValue > 0f,
+                                "GrowthTime" or "DamageDuringSex" or "SexTime" => upValue > 0f,
+                                _ => upValue < 0f
+                            };
 
-                            // 2. APPLY UI TWOTIER CONTROLS (0 = Allow, 1 = Invert)
                             if (isNegativeEffect && filterMode == 1)
                             {
-                                // Flip the mathematical polarity around to turn the penalty into a beneficial buff
+                                // Invert the value mathematically to make it a buff
                                 upValue = -upValue;
                             }
 
-                            processedList.Add(new LocalUpgradeAttributeInfo
+                            LocalUpgradeAttributeInfo info;
+                            info.Attribute = attributeEnumInt;
+                            info.UpgradeValue = upValue;
+                            info.UpgradePointsPerValue = pointsPerVal;
+                            processedList.Add(info);
+
+                            if (harmonyResultList != null && itemType != null)
                             {
-                                Attribute = attributeEnumInt,
-                                UpgradeValue = upValue,
-                                UpgradePointsPerValue = pointsPerVal
-                            });
+                                object clonedUpgradeItem = Activator.CreateInstance(itemType);
+                                attrProp?.SetValue(clonedUpgradeItem, attrObj);
+                                pointsProp?.SetValue(clonedUpgradeItem, pointsPerVal);
+                                valueProp?.SetValue(clonedUpgradeItem, upValue);
+                                harmonyResultList.Add(clonedUpgradeItem);
+                            }
                         }
 
                         EssenceDataAttributes[eTrait] = processedList;
+
+                        if (harmonyResultList != null)
+                        {
+                            DumberCBRPatches.Patches.AttributeUpgradesPatch.UpdateCachedPayload(eTrait, harmonyResultList);
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ModEntry.LogError($"Failed to load and contextually filter Redux database cache: {ex}");
+                ModEntry.LogError($"Error processing Redux database updates: {ex}");
             }
         }
 
-        internal ICollection<LocalUpgradeAttributeInfo> GetEssenceAttributeInfo(ETrait essenceTrait)
-        {
-            if (EssenceDataAttributes != null && EssenceDataAttributes.TryGetValue(essenceTrait, out var sourceList))
-            {
-                return sourceList;
-            }
-            return Array.Empty<LocalUpgradeAttributeInfo>();
-        }
     }
 }

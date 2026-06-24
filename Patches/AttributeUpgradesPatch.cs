@@ -1,15 +1,17 @@
-﻿using HarmonyLib;
-using System;
-using System.Collections.Generic;
+﻿//AttributeUpgradesPatch.cs
+
+using HarmonyLib;
+using System.Collections;
 using System.Reflection;
 using MBMScripts;
 using DumberCBRPatches.Configuration;
 
 namespace DumberCBRPatches.Patches
 {
-    public class AttributeUpgradesPatch
+    public static class AttributeUpgradesPatch
     {
         private static bool _patched = false;
+        private static readonly Dictionary<ETrait, IEnumerable> PrebuiltListsCache = [];
 
         public static void ApplyManualPatch(Harmony harmonyInstance)
         {
@@ -45,69 +47,27 @@ namespace DumberCBRPatches.Patches
             }
         }
 
-        private static void FilterReduxAttributesPostfix(object __instance, ref System.Collections.IEnumerable __result)
+        public static void UpdateCachedPayload(ETrait trait, IEnumerable filteredList)
         {
-            if (__result == null) return;
+            PrebuiltListsCache[trait] = filteredList;
+        }
 
-            int filterMode = ModSettingsDataRegister.EssenceFilterModeData.Value;
+        public static void ClearCache()
+        {
+            PrebuiltListsCache.Clear();
+        }
 
-            // FIX: If user wants vanilla behavior (0: Allow Negatives), exit early without executing reflection copies
-            if (filterMode == 0) return;
+        private static void FilterReduxAttributesPostfix(object __instance, ref IEnumerable __result)
+        {
+            if (__instance == null || ModSettingsDataRegister.EssenceFilterModeData.Value == 0) return;
 
-            Type listType = __result.GetType();
-            if (!listType.IsGenericType) return;
-
-            Type itemType = listType.GetGenericArguments()[0];
-
-            Type genericListType = typeof(List<>).MakeGenericType(itemType);
-            var filteredList = Activator.CreateInstance(genericListType) as System.Collections.IList;
-            if (filteredList == null) return;
-
-            PropertyInfo? attrProp = itemType.GetProperty("Attribute");
-            PropertyInfo? valueProp = itemType.GetProperty("UpgradeValue");
-            PropertyInfo? pointsProp = itemType.GetProperty("UpgradePointsPerValue");
-
-            foreach (object originalUpgradeItem in __result)
+            if (EssenceConfigValues.TryGetTraitFromInstance(__instance, out ETrait trait))
             {
-                if (originalUpgradeItem == null) continue;
-
-                string attrName = attrProp?.GetValue(originalUpgradeItem)?.ToString() ?? string.Empty;
-                float rawValue = (float)(valueProp?.GetValue(originalUpgradeItem) ?? 0f);
-
-                bool isNegativeEffect = false;
-
-                if (attrName == "MaintenanceCost")
+                if (PrebuiltListsCache.TryGetValue(trait, out var cachedList))
                 {
-                    isNegativeEffect = rawValue > 0f;
+                    __result = cachedList;
                 }
-                else if (attrName == "GrowthTime" || attrName == "DamageDuringSex" || attrName == "SexTime")
-                {
-                    isNegativeEffect = rawValue > 0f;
-                }
-                else
-                {
-                    isNegativeEffect = rawValue < 0f;
-                }
-
-                object clonedUpgradeItem = Activator.CreateInstance(itemType);
-                attrProp?.SetValue(clonedUpgradeItem, attrProp.GetValue(originalUpgradeItem));
-                pointsProp?.SetValue(clonedUpgradeItem, pointsProp.GetValue(originalUpgradeItem));
-
-                // FIX: Since filterMode 0 exits early, arriving here guarantees filterMode is 1 (Invert Negatives)
-                if (isNegativeEffect)
-                {
-                    // Flips the mathematical logic around to make the penalty act as a buff
-                    valueProp?.SetValue(clonedUpgradeItem, -rawValue);
-                }
-                else
-                {
-                    valueProp?.SetValue(clonedUpgradeItem, rawValue);
-                }
-
-                filteredList.Add(clonedUpgradeItem);
             }
-
-            __result = filteredList;
         }
     }
 }

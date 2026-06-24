@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿//CharacterConfigValues.cs
+
 using System.Globalization;
-using DumberCBRPatches.Configuration;
 using MBM.ModLoader.Settings;
 using MBMScripts;
 
@@ -14,11 +13,27 @@ namespace DumberCBRPatches.Configuration
 
         public CharacterConfigValues()
         {
-
             foreach (var name in ModSettingsDataRegister.TargetCharacters)
             {
-                Values[name] = new CharacterConfigEntries(name);
+                var entry = new CharacterConfigEntries(name);
+                Values[name] = entry;
+
+                string cleanName = ToDisplayNameHelper(name);
+                if (!Values.ContainsKey(cleanName))
+                {
+                    Values[cleanName] = entry;
+                }
             }
+        }
+
+        private static string ToDisplayNameHelper(string id)
+        {
+            for (int i = id.Length - 1; i >= 0; i--)
+            {
+                if (!char.IsDigit(id[i]))
+                    return id.Substring(0, i + 1);
+            }
+            return id;
         }
     }
 
@@ -34,25 +49,42 @@ namespace DumberCBRPatches.Configuration
         }
 
         // =========================================================
-        // TITS TYPE (SAFE CLAMP)
+        // TITS TYPE
         // =========================================================
         public int TitsType
         {
             get
             {
-                var val = ModSettingsDataRegister
-                    .CharacterTitsDropdowns[CharacterName]
-                    .Value;
+                if (ModSettingsDataRegister.CharacterTitsDropdowns.TryGetValue(CharacterName, out var dropdown))
+                {
+                    var val = dropdown.Value;
+                    return val < 0 ? 0 : (val > 5 ? 5 : val);
+                }
 
-                return val < 0 ? 0 : (val > 5 ? 5 : val);
+                string cleanName = ToCleanName(CharacterName);
+                if (ModSettingsDataRegister.CharacterTitsDropdowns.TryGetValue(cleanName, out dropdown))
+                {
+                    var val = dropdown.Value;
+                    return val < 0 ? 0 : (val > 5 ? 5 : val);
+                }
+
+                return 4;
             }
         }
 
         // =========================================================
-        // RAW TRAITS STRING
+        // TRAITS STRING
         // =========================================================
-        public string Traits =>
-            ModSettings.GetString(BaseModName, $"{CharacterName}_Traits") ?? string.Empty;
+        public string Traits
+        {
+            get
+            {
+                string cleanName = ToCleanName(CharacterName);
+                string settingsKey = $"{cleanName} Essence";
+
+                return ModSettings.GetString(BaseModName, settingsKey) ?? string.Empty;
+            }
+        }
 
         // =========================================================
         // TRAIT MAP
@@ -127,10 +159,10 @@ namespace DumberCBRPatches.Configuration
                 if (!TraitMap.TryGetValue(key, out var trait))
                     continue;
 
-                if (!float.TryParse(valueStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
-                    continue;
-
-                result[trait] = value;
+                if (float.TryParse(valueStr, NumberStyles.Any, CultureInfo.InvariantCulture, out float value))
+                {
+                    result[trait] = value;
+                }
             }
 
             return result;
@@ -154,5 +186,16 @@ namespace DumberCBRPatches.Configuration
         {
             return new Dictionary<ETrait, float>(GetTraitsCached());
         }
+
+        private static string ToCleanName(string id)
+        {
+            for (int i = id.Length - 1; i >= 0; i--)
+            {
+                if (!char.IsDigit(id[i]))
+                    return id.Substring(0, i + 1);
+            }
+            return id;
+        }
     }
 }
+

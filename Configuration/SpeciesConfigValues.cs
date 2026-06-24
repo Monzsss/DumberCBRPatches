@@ -31,10 +31,6 @@ namespace DumberCBRPatches.Configuration
                 .ToArray();
         }
 
-        // =========================
-        // CLEANED: No essence system
-        // =========================
-
         private IEnumerable<string> ParseCsv(string csvContent)
         {
             if (string.IsNullOrWhiteSpace(csvContent))

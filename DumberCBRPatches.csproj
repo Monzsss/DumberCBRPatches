@@ -30,9 +30,24 @@
 
 	<ItemGroup>
 		<Compile Remove="CBPatches.cs" />
+		<Compile Remove="Characters\Amilia2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\AnnaInitializePatchMOD.cs" />
+		<Compile Remove="Characters\AureInitializePatchMOD.cs" />
+		<Compile Remove="Characters\Barbara2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\BellaInitializePatchMOD.cs" />
+		<Compile Remove="Characters\ClaireInitializePatchMOD.cs" />
+		<Compile Remove="Characters\Flora2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\KarenInitializePatchMOD.cs" />
+		<Compile Remove="Characters\Lena2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\NeroInitializePatchMOD.cs" />
+		<Compile Remove="Characters\Niel2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\Sena2InitializePatchMOD.cs" />
+		<Compile Remove="Characters\SylviaInitializePatchMOD.cs" />
+		<Compile Remove="Characters\ViviInitializePatchMOD.cs" />
 		<Compile Remove="Configuration\FinalPricePatch.cs" />
 		<Compile Remove="Configuration\ProfessionRarityConfigValues.cs" />
 		<Compile Remove="Configuration\ProfessionRarityPatch.cs" />
+		<Compile Remove="Patches\SetEssenceValuePatch.cs" />
 		<Compile Remove="PluginInfo.cs" />
 	</ItemGroup>
 

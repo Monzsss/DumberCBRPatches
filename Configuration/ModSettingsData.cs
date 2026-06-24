@@ -10,9 +10,9 @@ namespace DumberCBRPatches.Configuration
         public string Description { get; }
         public string Placeholder { get; protected set; }
 
-        protected ModSettingsData(string name, string description, string placeholder = "")
+        protected ModSettingsData(string displayName, string description, string placeholder = "")
         {
-            Name = name;
+            Name = displayName;
             Description = description;
             Placeholder = placeholder;
         }
@@ -26,8 +26,8 @@ namespace DumberCBRPatches.Configuration
         private readonly int _defaultIndex;
         public string[] Options { get; }
 
-        public ModSettingsDataDropdown(string name, string[] options, int defaultIndex, string description, string placeholder = "")
-            : base(name, description, placeholder)
+        public ModSettingsDataDropdown(string displayName, string[] options, int defaultIndex, string description, string placeholder = "")
+            : base(displayName, description, placeholder)
         {
             Options = options;
             _defaultIndex = defaultIndex;
@@ -51,8 +51,8 @@ namespace DumberCBRPatches.Configuration
     {
         private readonly int _defaultValue;
 
-        public ModSettingsDataInt(string name, int defaultValue, string description, string placeholder = "")
-            : base(name, description, placeholder)
+        public ModSettingsDataInt(string displayName, int defaultValue, string description, string placeholder = "")
+            : base(displayName, description, placeholder)
         {
             _defaultValue = defaultValue;
         }
@@ -65,7 +65,6 @@ namespace DumberCBRPatches.Configuration
 
         public override void Register(string group = "")
         {
-            // Use placeholder if provided, otherwise use default
             string inputPlaceholder = !string.IsNullOrEmpty(Placeholder)
                 ? Placeholder
                 : "Enter an integer value.";
@@ -80,8 +79,8 @@ namespace DumberCBRPatches.Configuration
     {
         private readonly string _defaultValue;
 
-        public ModSettingsDataString(string name, string defaultValue, string description, string placeholder = "")
-            : base(name, description, placeholder)
+        public ModSettingsDataString(string displayName, string defaultValue, string description, string placeholder = "")
+            : base(displayName, description, placeholder)
         {
             _defaultValue = defaultValue;
         }
@@ -94,7 +93,6 @@ namespace DumberCBRPatches.Configuration
 
         public override void Register(string group = "")
         {
-            // Use placeholder if provided, otherwise use a generic one
             string inputPlaceholder = !string.IsNullOrEmpty(Placeholder)
                 ? Placeholder
                 : "Enter text here...";
