@@ -19,6 +19,11 @@ Patches for use with **Complex Breeding Redux** and **MBM Loader**.
 | ComplexBreedingRedux   | latest  |
 | MBM.ModLoader          | latest  |
 
+## Installation
+1. Make sure MBM.ModLoader is installed.
+2. Extract the DumberCBRPatches into the Mods folder in the game root directory.
+3. Launch the game.
+
 ## Notes
 
 - Some features may significantly affect game balance.
