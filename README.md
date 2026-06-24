@@ -1,4 +1,4 @@
-# DumberCBRPatches
+# DumberCBRPatches V1.0
 
 Special thanks to Memacile & GJQCSJ.
 
