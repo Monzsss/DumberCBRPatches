@@ -27,5 +27,5 @@ Patches to use with **Complex Breeding Redux** and **MBM Loader**.
 ## Notes
 
 - Some features may significantly affect game balance.
-- Use with caution when combining with other gameplay-altering mods.
+- Game restart needed when changing any value.
 - Always back up your save files before applying patches.
